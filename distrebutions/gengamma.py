@@ -25,8 +25,10 @@ class Gengamma:
 	def cdf(self, x):
 		return cdf_gengamma(x, self.a, self.b, self.lam)
 
-	def meanlogpdf(self, x, MlnX):
-		W1 = -math.log(gamma(self.a)) + math.log(self.b) - math.log(self.lam)
-		W2 = (self.a * self.b - 1) * (MlnX - math.log(self.lam))
-		W3 = -np.mean(np.power(x / self.lam, self.b))
-		return W1 + W2 + W3
+	def mean_logpdf(self, x, mean_lnx=None):
+		mean_lnx = mean_lnx if mean_lnx is not None else np.mean(np.log(x))
+
+		l1 = -math.log(gamma(self.a)) + math.log(self.b) - math.log(self.lam)
+		l2 = (self.a * self.b - 1) * (mean_lnx - math.log(self.lam))
+		l3 = -np.mean(np.power(x / self.lam, self.b))
+		return l1 + l2 + l3

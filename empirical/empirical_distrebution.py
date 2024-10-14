@@ -12,7 +12,8 @@ def ecdf(x, x_min=None, x_max=None):
 
 
 def lcdf_rvs(x, cdf, n):
-	rv_cdf = np.sort(np.random.rand(n))
+	rv_cdf = np.random.rand(n)
+	rv_cdf = np.sort(rv_cdf)
 	rv = np.zeros(np.shape(rv_cdf))
 	k = 1
 	for i in range(0, n):

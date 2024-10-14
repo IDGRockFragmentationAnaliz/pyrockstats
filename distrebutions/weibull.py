@@ -2,6 +2,7 @@ import math
 import numpy as np
 from scipy.optimize import minimize
 
+
 def pdf(x, alpha, scale):
 	return (alpha / scale) * ((x / scale) ** (alpha - 1)) * np.exp(-(x / scale) ** alpha)
 
@@ -21,17 +22,18 @@ def mean_logpdf(x, alpha, scale, mean_lnx=None):
 
 def fit_mle(x):
 	mean_lnx = np.mean(np.log(x))
-	functional = lambda theta: mean_logpdf(x, theta[0], theta[1], mean_lnx)
+	functional = lambda theta: -mean_logpdf(x, theta[0], theta[1], mean_lnx)
+	theta_0 = np.array([1 + 2e-3, 1])
 	res = minimize(
 		functional,
-		[1, 1],
-		bounds=((1 + 1e-3, None), (1e-3, None)),
+		theta_0,
+		bounds=((1e-3, None), (1e-3, None)),
 		method='Nelder-Mead', tol=1e-3
 	)
 	return res.x[0], res.x[1]
 
 
-class Weilbull:
+class weibull:
 	def __init__(self, alpha, scale):
 		self.alpha = alpha
 		self.scale = scale
@@ -45,7 +47,7 @@ class Weilbull:
 	def mean_logpdf(self, x, mean_lnx=None):
 		return mean_logpdf(x, self.alpha, self.scale, mean_lnx)
 
-
-def __call__(alpha, scale):
-	return Weibull(alpha, scale)
+	@staticmethod
+	def fit(x):
+		return fit_mle(x)
 

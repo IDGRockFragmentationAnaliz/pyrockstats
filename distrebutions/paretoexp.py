@@ -2,6 +2,7 @@ import math
 import numpy as np
 from scipy.optimize import minimize
 
+
 def pareto(x, a, x_min):
 	return ((a - 1) / x_min) * ((x / x_min) ** (-a))
 
@@ -32,27 +33,22 @@ def cdf(x: np.ndarray, alpha, scale):
 
 
 def mean_logpdf(x: np.ndarray, alpha, scale):
-	part1 = - np.log(scale) - np.log(_a(alpha))
-	part2 = -alpha * np.mean(x[x < scale] / scale - 1)
-	part3 = -alpha * np.mean(np.log(x[x >= scale] / scale))
-	print("part1", part1)
-	print("part2", part2)
-	print("part3", part3)
-	return part1 + part2 + part3
+	x_part1 = x[x < scale]
+	x_part2 = x[x >= scale]
+	n = len(x)
+	l1 = - np.log(scale) - np.log(_a(alpha))
+	l2 = -alpha/n * np.sum(x_part1 / scale - 1) if len(x_part1) > 0 else alpha/n
+	l3 = -alpha/n * np.sum(np.log(x_part2 / scale)) if len(x_part2) > 0 else 0
+	return l1 + l2 + l3
 
 
 def fit_mle(x):
 	alpha_0 = 1 + 1 / (np.mean(np.log(x)) - np.log(1))
-	functional = lambda theta: mean_logpdf(x, theta[0], theta[1])
-
-
-	print(alpha_0)
-	print(functional([alpha_0, 2]))
-	return 1
-
+	def functional(theta): return -mean_logpdf(x, theta[0], theta[1])
+	theta_0 = np.array([alpha_0, 2])
 	res = minimize(
 		functional,
-		[alpha_0, 2],
+		theta_0,
 		bounds=((1 + 1e-3, None), (1e-3, None)),
 		method='Nelder-Mead',
 		tol=1e-3
@@ -60,7 +56,7 @@ def fit_mle(x):
 	return res.x[0], res.x[1]
 
 
-class Paretoexp:
+class paretoexp:
 	def __init__(self, alpha, scale):
 		self.alpha = alpha
 		self.scale = scale
@@ -73,3 +69,7 @@ class Paretoexp:
 
 	def mean_logpdf(self, x):
 		return mean_logpdf(x, self.alpha, self.scale)
+
+	@staticmethod
+	def fit(x):
+		return fit_mle(x)

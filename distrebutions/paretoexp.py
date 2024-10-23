@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from scipy.optimize import minimize
+from .mle import MLEModification
 
 
 def pareto(x, a, x_min):
@@ -42,12 +43,23 @@ def mean_logpdf(x: np.ndarray, alpha, scale):
 	return l1 + l2 + l3
 
 
-def fit_mle(x):
+def get_functional(x, xmin=None, xmax=None):
+	modification = MLEModification(cdf, xmin, xmax)
+
+	def functional(theta):
+		l1 = -mean_logpdf(x, *theta)
+		l2 = -modification(theta)
+		return l1 + l2
+
+	return functional
+
+
+def fit_mle(x, xmin=None, xmax=None):
 	alpha_0 = 1 + 1 / (np.mean(np.log(x)) - np.log(1))
 	def functional(theta): return -mean_logpdf(x, theta[0], theta[1])
 	theta_0 = np.array([alpha_0, 2])
 	res = minimize(
-		functional,
+		get_functional(x, xmin=xmin, xmax=xmax),
 		theta_0,
 		bounds=((1 + 1e-3, None), (1e-3, None)),
 		method='Nelder-Mead',
@@ -71,5 +83,5 @@ class paretoexp:
 		return mean_logpdf(x, self.alpha, self.scale)
 
 	@staticmethod
-	def fit(x):
-		return fit_mle(x)
+	def fit(x, xmin=None, xmax=None):
+		return fit_mle(x, xmin=xmin, xmax=xmax)

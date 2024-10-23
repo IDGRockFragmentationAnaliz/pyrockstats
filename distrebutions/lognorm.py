@@ -4,6 +4,7 @@ from scipy.special import erf
 from scipy.special import gammainc
 from scipy.special import gamma
 from scipy.optimize import minimize
+from .mle import MLEModification
 
 
 def pdf(x, sigma, scale):
@@ -23,19 +24,24 @@ def mean_logpdf(x, sigma, scale, mean_lnx=None, mean_lnx2=None):
 	return part1 + part2
 
 
-def fit_mle(x, x_max=None, x_min=None):
+def get_functional(x, xmin=None, xmax=None, mean_lnx=None, mean_lnx2=None):
+	modification = MLEModification(cdf, xmin=xmin, xmax=xmax)
+
+	def functional(theta):
+		l1 = mean_logpdf(x, *theta, mean_lnx=mean_lnx, mean_lnx2=mean_lnx2)
+		l2 = modification(theta)
+		return -(l1 + l2)
+
+	return functional
+
+
+def fit_mle(x, xmin=None, xmax=None):
 	mean_lnx = np.mean(np.log(x))
 	mean_lnx2 = np.mean(np.log(x) ** 2)
 
-	def functional(theta):
-		return -mean_logpdf(
-			x, theta[0], theta[1],
-			mean_lnx=mean_lnx,
-			mean_lnx2=mean_lnx2)
-
 	theta_0 = np.array([1, 1])
 	res = minimize(
-		functional,
+		get_functional(x, xmin=xmin, xmax=xmax, mean_lnx=mean_lnx, mean_lnx2=mean_lnx2),
 		theta_0,
 		bounds=((1e-3, None), (1e-3, None)),
 		method='nelder-mead',
@@ -61,5 +67,5 @@ class lognorm:
 		return mean_logpdf(x, self.sigma, self.mu, mean_lnx2)
 
 	@staticmethod
-	def fit(x, x_max=None, x_min=None):
-		return fit_mle(x, x_max, x_min)
+	def fit(x, xmin=None, xmax=None):
+		return fit_mle(x, xmin=xmin, xmax=xmax)

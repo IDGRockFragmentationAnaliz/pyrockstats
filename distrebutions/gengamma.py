@@ -4,6 +4,8 @@ from scipy.special import erf
 from scipy.special import gammainc
 from scipy.special import gamma
 from scipy.optimize import minimize
+from .mle import MLEModification
+
 
 def cdf(x, a, b, lam):
 	return gammainc(a, np.power(x / lam, b))
@@ -21,15 +23,17 @@ def mean_logpdf(x, a, b, scale, mean_lnx=None):
 	return l1 + l2 + l3
 
 
-def fit_mle(x):
+def functional(theta, x, xmin=None, xmax=None, mean_lnx=None):
+	l1 = mean_logpdf(x, *theta, mean_lnx=mean_lnx)
+	l2 = (MLEModification(cdf, xmin, xmax))(theta)
+	return -(l1 + l2)
+
+
+def fit_mle(x, xmin=None, xmax=None):
 	mean_lnx = np.mean(np.log(x))
-
-	def functional(_theta):
-		return -mean_logpdf(x, _theta[0], _theta[1], _theta[2], mean_lnx=mean_lnx)
-
 	theta_0 = np.array([1, 1, 1])
 	theta = minimize(
-		functional,
+		lambda _theta: functional(_theta, x, xmin=xmin, xmax=xmax, mean_lnx=mean_lnx),
 		theta_0,
 		bounds=((1e-3, None), (1e-3, None), (1e-3, None)),
 		method='Nelder-Mead', tol=1e-3
@@ -50,5 +54,5 @@ class gengamma:
 		return cdf(x, self.a, self.b, self.scale)
 
 	@staticmethod
-	def fit(x):
-		return fit_mle(x)
+	def fit(x, xmin=None, xmax=None):
+		return fit_mle(x, xmin=xmin, xmax=xmax)

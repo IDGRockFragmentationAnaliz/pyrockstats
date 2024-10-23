@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from scipy.optimize import minimize
+from .mle import MLEModification
 
 
 def pdf(x, alpha, scale):
@@ -20,12 +21,22 @@ def mean_logpdf(x, alpha, scale, mean_lnx=None):
 	return part1 + part2 + part3
 
 
-def fit_mle(x):
+def get_functional(x, xmin=None, xmax=None):
+	modification = MLEModification(cdf, xmin, xmax)
+
+	def functional(theta):
+		l1 = -mean_logpdf(x, *theta, mean_lnx=np.mean(np.log(x)))
+		l2 = -modification(theta)
+		return l1 + l2
+
+	return functional
+
+
+def fit_mle(x, xmax=None, xmin=None):
 	mean_lnx = np.mean(np.log(x))
-	functional = lambda theta: -mean_logpdf(x, theta[0], theta[1], mean_lnx)
 	theta_0 = np.array([1 + 2e-3, 1])
 	res = minimize(
-		functional,
+		get_functional(x, xmin=xmin, xmax=xmax),
 		theta_0,
 		bounds=((1e-3, None), (1e-3, None)),
 		method='Nelder-Mead', tol=1e-3
@@ -48,6 +59,6 @@ class weibull:
 		return mean_logpdf(x, self.alpha, self.scale, mean_lnx)
 
 	@staticmethod
-	def fit(x):
-		return fit_mle(x)
+	def fit(x, xmin=None, xmax=None):
+		return fit_mle(x, xmin=xmin, xmax=xmax)
 

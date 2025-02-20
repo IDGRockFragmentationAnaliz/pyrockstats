@@ -28,14 +28,19 @@ def get_functional(x, xmin=None, xmax=None, mean_lnx=None, mean_lnx2=None):
 	modification = MLEModification(cdf, xmin=xmin, xmax=xmax)
 
 	def functional(theta):
-		l1 = mean_logpdf(x, *theta, mean_lnx=mean_lnx, mean_lnx2=mean_lnx2)
+		l1 = -mean_logpdf(x, *theta, mean_lnx=mean_lnx, mean_lnx2=mean_lnx2)
 		l2 = modification(theta)
-		return -(l1 + l2)
+		return l1 + l2
 
 	return functional
 
 
 def fit_mle(x, xmin=None, xmax=None):
+	mx = np.mean(x)
+	x = x / mx
+	xmin = xmin / mx if xmin is not None else xmin
+	xmax = xmax / mx if xmax is not None else xmax
+
 	mean_lnx = np.mean(np.log(x))
 	mean_lnx2 = np.mean(np.log(x) ** 2)
 
@@ -48,7 +53,7 @@ def fit_mle(x, xmin=None, xmax=None):
 		tol=1e-3
 	)
 
-	return res.x[0], res.x[1]
+	return res.x[0], res.x[1]*mx
 
 
 class lognorm:

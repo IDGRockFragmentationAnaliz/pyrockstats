@@ -22,17 +22,22 @@ def mean_logpdf(x, alpha, scale, mean_lnx=None):
 
 
 def get_functional(x, xmin=None, xmax=None):
+
 	modification = MLEModification(cdf, xmin, xmax)
 
 	def functional(theta):
-		l1 = -mean_logpdf(x, *theta, mean_lnx=np.mean(np.log(x)))
-		l2 = -modification(theta)
-		return l1 + l2
+		l_0 = -mean_logpdf(x, *theta, mean_lnx=np.mean(np.log(x)))
+		return l_0 + modification(theta)
 
 	return functional
 
 
 def fit_mle(x, xmax=None, xmin=None):
+	mx = np.mean(x)
+	x = x / mx
+	xmin = xmin / mx if xmin is not None else xmin
+	xmax = xmax / mx if xmax is not None else xmax
+
 	mean_lnx = np.mean(np.log(x))
 	theta_0 = np.array([1 + 2e-3, 1])
 	res = minimize(
@@ -41,7 +46,7 @@ def fit_mle(x, xmax=None, xmin=None):
 		bounds=((1e-3, None), (1e-3, None)),
 		method='Nelder-Mead', tol=1e-3
 	)
-	return res.x[0], res.x[1]
+	return res.x[0], res.x[1]*mx
 
 
 class weibull:

@@ -48,15 +48,22 @@ def get_functional(x, xmin=None, xmax=None):
 
 	def functional(theta):
 		l1 = -mean_logpdf(x, *theta)
-		l2 = -modification(theta)
+		l2 = modification(theta)
 		return l1 + l2
 
 	return functional
 
 
-def fit_mle(x, xmin=None, xmax=None):
-	alpha_0 = 1 + 1 / (np.mean(np.log(x)) - np.log(1))
-	def functional(theta): return -mean_logpdf(x, theta[0], theta[1])
+def fit_mle(x: np.ndarray, xmin=None, xmax=None):
+	mx = np.mean(x)
+	print(mx)
+	x = x/mx
+	xmin = xmin/mx if xmin is not None else xmin
+	xmax = xmax/mx if xmax is not None else xmax
+
+	alpha_0 = 1 + 1 / (np.mean(np.log(x/np.min(x))))
+	print(alpha_0)
+
 	theta_0 = np.array([alpha_0, 2])
 	res = minimize(
 		get_functional(x, xmin=xmin, xmax=xmax),
@@ -65,7 +72,7 @@ def fit_mle(x, xmin=None, xmax=None):
 		method='Nelder-Mead',
 		tol=1e-3
 	)
-	return res.x[0], res.x[1]
+	return res.x[0], res.x[1]*mx
 
 
 class paretoexp:

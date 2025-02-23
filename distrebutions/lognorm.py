@@ -65,8 +65,16 @@ class lognorm:
 	def pdf(self, x):
 		return pdf(x, self.sigma, self.scale)
 
-	def cdf(self, x):
-		return cdf(x, self.sigma, self.scale)
+	def cdf(self, x, xmin=None, xmax=None):
+		if xmin is None and xmax is None:
+			return cdf(x, self.sigma, self.scale)
+		cdf_min = cdf(xmin, self.sigma, self.scale) \
+			if xmin is not None else 0
+		cdf_max = cdf(xmax, self.sigma, self.scale)\
+			if xmax is not None else 1
+		
+		return (cdf(x, self.sigma, self.scale) - cdf_min)/(cdf_max - cdf_min)
+
 
 	def mean_logpdf(self, x, mean_lnx2):
 		return mean_logpdf(x, self.sigma, self.mu, mean_lnx2)

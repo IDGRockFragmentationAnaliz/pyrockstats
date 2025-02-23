@@ -56,13 +56,11 @@ def get_functional(x, xmin=None, xmax=None):
 
 def fit_mle(x: np.ndarray, xmin=None, xmax=None):
 	mx = np.mean(x)
-	print(mx)
 	x = x/mx
 	xmin = xmin/mx if xmin is not None else xmin
 	xmax = xmax/mx if xmax is not None else xmax
 
 	alpha_0 = 1 + 1 / (np.mean(np.log(x/np.min(x))))
-	print(alpha_0)
 
 	theta_0 = np.array([alpha_0, 2])
 	res = minimize(
@@ -79,12 +77,16 @@ class paretoexp:
 	def __init__(self, alpha, scale):
 		self.alpha = alpha
 		self.scale = scale
-
-	def pdf(self, x):
-		return pdf(x, self.alpha, self.scale)
-
-	def cdf(self, x):
-		return cdf(x, self.alpha, self.scale)
+	
+	def cdf(self, x, xmin=None, xmax=None):
+		if xmin is None and xmax is None:
+			return cdf(x, self.alpha, self.scale)
+		cdf_min = cdf(xmin, self.alpha, self.scale) \
+			if xmin is not None else 0
+		cdf_max = cdf(xmax, self.alpha, self.scale) \
+			if xmax is not None else 1
+		
+		return (cdf(x, self.alpha, self.scale) - cdf_min) / (cdf_max - cdf_min)
 
 	def mean_logpdf(self, x):
 		return mean_logpdf(x, self.alpha, self.scale)

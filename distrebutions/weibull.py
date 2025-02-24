@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from scipy.optimize import minimize
+from scipy.optimize import fsolve
 from .mle import MLEModification
 
 
@@ -32,20 +33,39 @@ def get_functional(x, xmin=None, xmax=None):
 	return functional
 
 
+def mle_alpha_equation(alpha, x):
+	m_x = np.mean(x ** alpha)
+	m_lx = np.mean(np.log(x))
+	m_xlx = np.mean(x ** alpha * np.log(x))
+	den = m_xlx - m_x * m_lx
+	return alpha * den - m_x
+
+
 def fit_mle(x, xmax=None, xmin=None):
 	mx = np.mean(x)
 	x = x / mx
 	xmin = xmin / mx if xmin is not None else xmin
 	xmax = xmax / mx if xmax is not None else xmax
-
-	mean_lnx = np.mean(np.log(x))
-	theta_0 = np.array([1 + 2e-3, 1])
+	
+	alpha_0 = 1
+	lambda_0 = np.mean(x)
+	
+	res = fsolve(
+		mle_alpha_equation, np.array(alpha_0), args=(x,))
+	
+	alpha_0 = res[0]
+	lambda_0 = np.mean(x ** alpha_0) ** (1/alpha_0)
+	
+	theta_0 = np.array([alpha_0 + 2e-3, lambda_0])
+	print("initial", theta_0)
 	res = minimize(
 		get_functional(x, xmin=xmin, xmax=xmax),
 		theta_0,
 		bounds=((1e-3, None), (1e-3, None)),
 		method='Nelder-Mead', tol=1e-3
 	)
+	print("final",[res.x[0], res.x[1]])
+	
 	return res.x[0], res.x[1]*mx
 
 
@@ -54,8 +74,14 @@ class weibull:
 		self.alpha = alpha
 		self.scale = scale
 
-	def pdf(self, x):
-		return pdf(x, self.alpha, self.scale)
+	def pdf(self, x, xmin=None, xmax=None):
+		if xmin is None and xmax is None:
+			return pdf(x, self.alpha, self.scale)
+		cdf_min = cdf(xmin, self.alpha, self.scale) \
+			if xmin is not None else 0
+		cdf_max = cdf(xmax, self.alpha, self.scale) \
+			if xmax is not None else 1
+		return pdf(x, self.alpha, self.scale) / (cdf_max - cdf_min)
 
 	def cdf(self, x, xmin=None, xmax=None):
 		if xmin is None and xmax is None:
@@ -64,7 +90,6 @@ class weibull:
 			if xmin is not None else 0
 		cdf_max = cdf(xmax, self.alpha, self.scale) \
 			if xmax is not None else 1
-		
 		return (cdf(x, self.alpha, self.scale) - cdf_min) / (cdf_max - cdf_min)
 
 	def mean_logpdf(self, x, mean_lnx=None):

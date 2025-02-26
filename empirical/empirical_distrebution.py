@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def ecdf(x, x_min=None, x_max=None):
+def ecdf(x, xmin=None, xmax=None):
     x = np.asarray(x)
     if len(x) == 0:
         values = np.array([])
@@ -9,14 +9,14 @@ def ecdf(x, x_min=None, x_max=None):
     else:
         values, counts = np.unique(x, return_counts=True)
     
-    if x_min is not None:
-        if len(values) == 0 or x_min < values[0]:
-            values = np.insert(values, 0, x_min)
+    if xmin is not None:
+        if len(values) == 0 or xmin < values[0]:
+            values = np.insert(values, 0, xmin)
             counts = np.insert(counts, 0, 0)
     
-    if x_max is not None:
-        if len(values) == 0 or x_max > values[-1]:
-            values = np.append(values, x_max)
+    if xmax is not None:
+        if len(values) == 0 or xmax > values[-1]:
+            values = np.append(values, xmax)
             counts = np.append(counts, 0)
     
     cum_counts = np.cumsum(counts)
@@ -69,23 +69,17 @@ def get_rv_cdf_sorted(n):
 
 def ecdf_rvs(values, e_freq, n):
     rv_cdf = get_rv_cdf_sorted(n)
-    rv = np.zeros(np.shape(rv_cdf))
-    
-    k = 0
-    for i in range(n):
-        while rv_cdf[i] > e_freq[k]:
-            k = k + 1
-        rv[i] = values[k]
+    e_freq = (e_freq - e_freq[0]) / (e_freq[-1] - e_freq[0])
+    idx_s = np.searchsorted(e_freq, rv_cdf, "left") - 1
+    rv = values[idx_s]
     return rv
 
 
-def lcdf_rvs(values, e_freq, n):
-    rv_cdf = np.random.rand(n)
-    rv_cdf = np.sort(rv_cdf)
-    rv = np.zeros(np.shape(rv_cdf))
-    k = 0
-    for i in range(n):
-        while rv_cdf[i] > e_freq[k]:
-            k = k + 1
-        rv[i] = (values[k] - values[k - 1]) / (e_freq[k] - e_freq[k - 1]) * (rv_cdf[i] - e_freq[k - 1]) + values[k - 1]
+def lecdf_rvs(values, e_freq, n):
+    rv_cdf = get_rv_cdf_sorted(n)
+    rv_sub_cdf = np.random.rand(n)
+    d_values = np.diff(values)
+    e_freq = (e_freq - e_freq[0]) / (e_freq[-1] - e_freq[0])
+    idx_s = np.searchsorted(e_freq, rv_cdf, "left")-1
+    rv = d_values[idx_s]*rv_sub_cdf + values[idx_s]
     return rv

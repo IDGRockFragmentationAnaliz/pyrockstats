@@ -1,18 +1,36 @@
 import numpy as np
 from pyrockstats import ecdf
-from pyrockstats.empirical import lcdf_rvs
+from pyrockstats.empirical import lecdf_rvs
+from pyrockstats.empirical.empirical_distrebution import empirical_cdf_gen
+from matplotlib import pyplot as plt
 
 
-def get_ks_distribution(s: np.ndarray, model, n_ks=100, x_min=None, x_max=None):
-	x_min = np.min(s) if x_min is None else x_min
-	x_max = np.max(s) if x_max is None else x_max
-	n = len(s)
-	x, cdf = ecdf(s)
+def ks_norm(f1, f2):
+	assert len(f1) == len(f2), "lengths of the functions must be equal"
+	return np.max(np.abs(f1 - f2))
+
+
+def get_pseudo_ks(x, model, xmin=None, xmax=None):
+	theta = model.fit(x, xmin=xmin, xmax=xmax)
+	dist = model(*theta)
+	rv = dist.rvs(len(x), xmin=xmin, xmax=xmax)
+	pseudo_values, pseudo_freqs = ecdf(rv, xmin=xmin, xmax=xmax)
+	boot_cdf = dist.cdf(pseudo_values, xmin=xmin, xmax=xmax)
+	plt.plot(pseudo_values, boot_cdf)
+	plt.plot(pseudo_values, pseudo_freqs)
+	plt.xscale('log')
+	plt.show()
+	exit()
+	return ks_norm(boot_cdf, pseudo_freqs)
+
+
+def get_ks_distribution(x: np.ndarray, model, n_ks=100, xmin=None, xmax=None):
+	xmin = np.min(x) if xmin is None else xmin
+	xmax = np.max(x) if xmax is None else xmax
+	n = len(x)
+	values, freqs = ecdf(x)
 	ks = np.empty(n_ks)
 	for i in range(n_ks):
-		_s = lcdf_rvs(x, cdf, n)
-		_x, _ecdf = ecdf(s, x_min=x_min)
-		theta = model.fit(_s)
-		distribution = model(*theta)
-		ks[i] = np.max(np.abs(_ecdf - distribution.cdf(_x)))
+		boot_x = lecdf_rvs(values, freqs, n)
+		ks[i] = get_pseudo_ks(boot_x, model, xmin=xmin, xmax=xmax)
 	return ks

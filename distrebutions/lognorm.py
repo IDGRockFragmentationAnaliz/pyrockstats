@@ -40,10 +40,10 @@ def fit_mle(x, xmin=None, xmax=None):
 	x = x / mx
 	xmin = xmin / mx if xmin is not None else xmin
 	xmax = xmax / mx if xmax is not None else xmax
-
+	
 	mean_lnx = np.mean(np.log(x))
 	mean_lnx2 = np.mean(np.log(x) ** 2)
-
+	
 	theta_0 = np.array([1, 1])
 	res = minimize(
 		get_functional(x, xmin=xmin, xmax=xmax, mean_lnx=mean_lnx, mean_lnx2=mean_lnx2),
@@ -81,8 +81,22 @@ class lognorm:
 			if xmax is not None else 1
 		
 		return (cdf(x, self.sigma, self.scale) - cdf_min)/(cdf_max - cdf_min)
-
-
+	
+	def rvs(self, n, xmin=None, xmax=None):
+		rv = self.sigma * np.random.normal(size=n) + self.mu
+		if xmin is None and xmax is None:
+			return np.exp(rv)
+		logxmin = np.log(xmin) if xmin is not None or xmin != 0 else -np.inf
+		logxmax = np.log(xmax) if xmax is not None else np.inf
+		mask = np.where(np.logical_or(rv < logxmin, rv > logxmax))[0]
+		n = mask.shape[0]
+		while n > 0:
+			rv[mask] = self.sigma * np.random.normal(size=n) + self.mu
+			idxs = np.where(np.logical_and(rv[mask] < logxmin, rv[mask] > logxmax))[0]
+			mask = mask[idxs]
+			n = mask.shape[0]
+		return np.exp(rv)
+	
 	def mean_logpdf(self, x, mean_lnx2):
 		return mean_logpdf(x, self.sigma, self.mu, mean_lnx2)
 

@@ -1,1 +1,1 @@
-from .empirical_distrebution import ecdf, lcdf_rvs
+from .empirical_distrebution import ecdf, lecdf_rvs

@@ -16,11 +16,11 @@ def get_pseudo_ks(x, model, xmin=None, xmax=None):
 	rv = dist.rvs(len(x), xmin=xmin, xmax=xmax)
 	pseudo_values, pseudo_freqs = ecdf(rv, xmin=xmin, xmax=xmax)
 	boot_cdf = dist.cdf(pseudo_values, xmin=xmin, xmax=xmax)
-	plt.plot(pseudo_values, boot_cdf)
-	plt.plot(pseudo_values, pseudo_freqs)
-	plt.xscale('log')
-	plt.show()
-	exit()
+	# plt.plot(pseudo_values, boot_cdf)
+	# plt.plot(pseudo_values, pseudo_freqs)
+	# plt.xscale('log')
+	# plt.show()
+	# exit()
 	return ks_norm(boot_cdf, pseudo_freqs)
 
 

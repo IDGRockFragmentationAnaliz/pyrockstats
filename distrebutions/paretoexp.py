@@ -22,14 +22,25 @@ def pdf(x: np.ndarray, alpha, scale):
     return c * y
 
 
+def cdf_inversed(y: np.ndarray, alpha, scale):
+    y = np.array(y)
+    cdf_scale = (alpha-1)*(np.exp(alpha) - 1)/((alpha - 1)*np.exp(alpha) + 1)
+    y_mask1 = np.where(y < cdf_scale)
+    y_mask2 = np.where(y >= cdf_scale)
+    x = np.empty(y.shape)
+    x[y_mask1] = -scale/alpha*np.log(1 - alpha * np.exp(-alpha) * _a(alpha) * y[y_mask1])
+    x[y_mask2] = scale * ((_a(alpha) * (alpha - 1) * (1 - y[y_mask2])) ** (1 / (1 - alpha)))
+    return x
+
+
 def cdf(x: np.ndarray, alpha, scale):
-    a_inv = 1 / _a(alpha)
+    scale_c = 1 / _a(alpha)
     x = np.array(x)
     y = np.empty(x.shape)
     mask_1 = x < scale
     mask_2 = x >= scale
-    y[mask_1] = a_inv / alpha * np.exp(alpha) * (1 - np.exp(-alpha * (x[mask_1] / scale)))
-    y[mask_2] = 1 - (a_inv / (alpha - 1)) * (x[mask_2] / scale) ** (1 - alpha)
+    y[mask_1] = scale_c / alpha * np.exp(alpha) * (1 - np.exp(-alpha * (x[mask_1] / scale)))
+    y[mask_2] = 1 - (scale_c / (alpha - 1)) * (x[mask_2] / scale) ** (1 - alpha)
     return y
 
 
@@ -101,14 +112,7 @@ class paretoexp:
     
     def rvs(self, n: int, xmin=None, xmax=None):
         rv_cdf = np.random.rand(n)
-        rv = np.empty(n)
-        mask_exp = rv_cdf < self.c
-        mask_power = rv_cdf >= self.c
-        exp_part = np.log(self.c) - np.log(rv_cdf[mask_exp])
-        exp_part = (exp_part / self.alpha + 1) * self.scale
-        power_part = ((self.c / rv_cdf[mask_power]) ** (1 / self.alpha)) * self.scale
-        rv[mask_exp] = exp_part
-        rv[mask_power] = power_part
+        rv = cdf_inversed(rv_cdf, alpha=self.alpha, scale=self.scale)
         return rv
     
     # self.scale

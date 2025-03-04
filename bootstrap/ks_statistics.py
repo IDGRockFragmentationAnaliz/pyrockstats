@@ -10,6 +10,11 @@ def ks_norm(f1, f2):
 	return np.max(np.abs(f1 - f2))
 
 
+def get_confidence_value(ks, significance):
+	confidence = np.quantile(ks, 1 - significance)
+	return confidence
+
+
 def get_pseudo_ks(x, model, xmin=None, xmax=None):
 	theta = model.fit(x, xmin=xmin, xmax=xmax)
 	dist = model(*theta)

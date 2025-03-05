@@ -85,7 +85,9 @@ def fit_mle(x: np.ndarray, xmin=None, xmax=None):
 
 
 class paretoexp:
-    def __init__(self, alpha, scale):
+    def __init__(self, alpha, scale, xmin=None, xmax=None):
+        self.xmin = xmin if xmin is not None else None
+        self.xmax = xmax if xmax is not None else None
         self.alpha = alpha
         self.scale = scale
         self.c = 1 / (scale * _a(alpha))

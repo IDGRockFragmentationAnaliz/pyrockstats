@@ -58,6 +58,8 @@ def fit_mle(x, xmin=None, xmax=None):
 
 class lognorm:
 	def __init__(self, sigma, scale, xmin=None, xmax=None):
+		self.xmin = xmin if xmin is not None else None
+		self.xmax = xmax if xmax is not None else None
 		self.sigma = sigma
 		self.scale = scale
 		self.mu = math.log(scale)

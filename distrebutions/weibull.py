@@ -69,6 +69,8 @@ def fit_mle(x, xmax=None, xmin=None):
 
 class weibull:
     def __init__(self, alpha, scale, xmin=None, xmax=None):
+        self.xmin = xmin if xmin is not None else None
+        self.xmax = xmax if xmax is not None else None
         self.alpha = alpha
         self.scale = scale
         self.xmin = xmin

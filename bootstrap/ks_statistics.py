@@ -1,6 +1,6 @@
 import numpy as np
 from pyrockstats import ecdf
-from pyrockstats.empirical import lecdf_rvs
+from pyrockstats.empirical import lecdf_rvs, ecdf_rvs
 from pyrockstats.empirical.empirical_distrebution import empirical_cdf_gen
 from matplotlib import pyplot as plt
 
@@ -38,4 +38,18 @@ def get_ks_distribution(x: np.ndarray, model, n_ks=100, xmin=None, xmax=None):
 	for i in range(n_ks):
 		boot_x = lecdf_rvs(values, freqs, n)
 		ks[i] = get_pseudo_ks(boot_x, model, xmin=xmin, xmax=xmax)
+	return ks
+
+
+def get_ks_estimation(x, values_0, freq_0, xmin=None, xmax=None):
+	xmin = np.min(x) if xmin is None else xmin
+	xmax = np.max(x) if xmax is None else xmax
+	x = x[x >= xmin]
+	x = x[x <= xmax]
+	
+	values, e_freq = ecdf(x)
+	x = ecdf_rvs(values, e_freq, len(x))
+	values, e_freq = ecdf(x)
+	cdf_0 = empirical_cdf_gen(values_0, freq_0)
+	ks = ks_norm(cdf_0(values), e_freq)
 	return ks

@@ -46,7 +46,7 @@ def empirical_cdf_gen(values, e_freq, return_linear=False):
         return cdf
     
     def cdf(x):
-        idx_s = np.searchsorted(values, x, "left")
+        idx_s = np.searchsorted(values, x, "right")
         idx_s = np.clip(idx_s, 0, n - 1)
         return e_freq[idx_s]
     return cdf
